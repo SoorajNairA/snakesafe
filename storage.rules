@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Snake images ───────────────────────────────────────────────────────
+    match /snake_images/{imageFile} {
+      // Only authenticated users may read; writes handled by server-side Admin SDK
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Bite images ────────────────────────────────────────────────────────
+    match /bite_images/{imageFile} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
