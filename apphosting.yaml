@@ -1,8 +1,5 @@
-# Firebase App Hosting configuration for the Next.js frontend.
-# Docs: https://firebase.google.com/docs/app-hosting/configure
-
+# Firebase App Hosting configuration — project root (points to frontend/ subdirectory)
 runConfig:
-  # Cloud Run CPU & memory allocation
   cpu: 1
   memoryMiB: 512
   minInstances: 0
@@ -10,9 +7,6 @@ runConfig:
   concurrency: 80
 
 env:
-  # Public env vars are inlined at build time (NEXT_PUBLIC_*).
-  # Set these in the Firebase Console → App Hosting → Environment variables,
-  # or via: firebase apphosting:secrets:set
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     secret: FIREBASE_API_KEY
     availability:
@@ -43,15 +37,16 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  # The deployed Cloud Functions base URL — set after running firebase deploy --only functions
   - variable: NEXT_PUBLIC_API_URL
     secret: API_URL
     availability:
       - BUILD
       - RUNTIME
-  # Disable emulator mode in production
   - variable: NEXT_PUBLIC_FIREBASE_USE_EMULATOR
     value: "false"
     availability:
       - BUILD
       - RUNTIME
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  # - variable: MY_SECRET
+  #   secret: mySecretRef
