@@ -115,7 +115,10 @@ function uploadImage(req, folder, userId, imageType) {
       reject(Object.assign(err, { statusCode: 500, code: "IMAGE_UPLOAD_FAILED" }))
     );
 
-    req.pipe(bb);
+    // In Firebase Cloud Functions the request body is fully buffered into
+    // req.rawBody before the handler runs, so the stream is already consumed.
+    // Feed the raw buffer directly to busboy instead of piping the stream.
+    bb.end(req.rawBody);
   });
 }
 

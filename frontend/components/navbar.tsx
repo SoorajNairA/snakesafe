@@ -25,6 +25,7 @@ import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/identify", label: "Identify", icon: Search },
+  { href: "/diagnose", label: "Diagnose Wound", icon: ShieldCheck },
   { href: "/emergency", label: "Emergency", icon: AlertTriangle },
   { href: "/hospitals", label: "Hospitals", icon: MapPin },
   { href: "/first-aid", label: "First Aid", icon: BookOpen },

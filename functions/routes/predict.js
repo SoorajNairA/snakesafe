@@ -58,4 +58,41 @@ router.post("/upload", verifyToken, async (req, res, next) => {
   }
 });
 
+// ── POST /predict/wound/upload ───────────────────────────────────────────────
+// Accepts multipart/form-data with a "wound_image" file field.
+// Uploads the image to Firebase Storage, runs wound diagnosis synchronously,
+// and returns the result without creating a report document.
+// Content-Type: multipart/form-data
+// Returns: { is_snakebite, confidence_score, description }
+router.post("/wound/upload", verifyToken, async (req, res, next) => {
+  try {
+    const { signedUrl } = await uploadImage(
+      req,
+      "wound_images",
+      req.user.uid,
+      "wound"
+    );
+
+    const diagnosis = await getWoundDiagnosis(signedUrl);
+
+    return res.json({
+      message: "Wound diagnosis completed.",
+      ...diagnosis,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Helper function to diagnose wounds (placeholder for future model integration)
+async function getWoundDiagnosis(imageUrl) {
+  // @TODO: Integrate with wound detection model when available
+  // For now, return a placeholder response structure
+  return {
+    is_snakebite: false,
+    confidence_score: 0.5,
+    description: "Wound analysis feature coming soon. Please consult a medical professional.",
+  };
+}
+
 module.exports = router;
