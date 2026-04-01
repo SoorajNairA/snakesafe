@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, AlertTriangle, MapPin, BookOpen, FileText, Zap } from "lucide-react";
+import { Search, AlertTriangle, MapPin, BookOpen, FileText, Zap, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion";
@@ -17,6 +17,17 @@ const features = [
     bg: "bg-primary/10",
     hoverBorder: "hover:border-primary/40",
     glow: "group-hover:shadow-[0_0_30px_oklch(0.58_0.24_25/0.1)]",
+  },
+  {
+    icon: Stethoscope,
+    title: "Wound Diagnosis",
+    description:
+      "Analyze wound photos to determine if they might be a snakebite. Get instant feedback with confidence scores and medical guidance.",
+    href: "/diagnose",
+    color: "text-red-400",
+    bg: "bg-red-400/10",
+    hoverBorder: "hover:border-red-400/40",
+    glow: "group-hover:shadow-[0_0_30px_oklch(0.64_0.25_25/0.1)]",
   },
   {
     icon: AlertTriangle,

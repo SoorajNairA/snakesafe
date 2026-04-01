@@ -359,6 +359,11 @@ export function IdentifyClient() {
                         View First Aid
                       </Button>
                     </Link>
+                    <Link href="/diagnose" className="flex-1">
+                      <Button variant="outline" className="w-full border-border text-foreground hover:bg-secondary transition-colors">
+                        Diagnose Wound
+                      </Button>
+                    </Link>
                     <Button
                       variant="outline"
                       className="flex-1 border-border text-foreground hover:bg-secondary transition-colors"

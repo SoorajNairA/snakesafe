@@ -6,6 +6,7 @@ const footerLinks = [
     title: "Features",
     links: [
       { label: "Identify Snake", href: "/identify" },
+      { label: "Diagnose Wound", href: "/diagnose" },
       { label: "Emergency", href: "/emergency" },
       { label: "Hospital Finder", href: "/hospitals" },
       { label: "First Aid", href: "/first-aid" },

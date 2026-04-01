@@ -321,6 +321,13 @@ export function DiagnoseClient() {
                     <p>✓ Monitor for any changes</p>
                     <p>
                       ✓{" "}
+                      <Link href="/identify" className="underline hover:text-foreground">
+                        Identify the snake
+                      </Link>{" "}
+                      if you haven't already
+                    </p>
+                    <p>
+                      ✓{" "}
                       <Link href="/report" className="underline hover:text-foreground">
                         Report this incident
                       </Link>{" "}
