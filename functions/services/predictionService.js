@@ -94,4 +94,68 @@ async function getPrediction(imageUrl) {
   };
 }
 
-module.exports = { getPrediction };
+/**
+ * getWoundDiagnosis
+ * Calls the FastAPI /predict/wound endpoint to analyse a wound image
+ * for snakebite characteristics.
+ *
+ * @param {string} imageUrl - Signed URL or public URL of the wound image
+ * @returns {Promise<{ is_snakebite: boolean, confidence_score: number, description: string }>}
+ */
+async function getWoundDiagnosis(imageUrl) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= config.AI_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const response = await axios.post(
+        `${AI_MODEL_URL}/predict/wound`,
+        { image_url: imageUrl },
+        {
+          timeout: config.AI_TIMEOUT_MS,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const { is_snakebite, confidence_score, description } = response.data;
+
+      if (is_snakebite === null || is_snakebite === undefined || confidence_score === null || confidence_score === undefined || !description) {
+        const err = new Error("AI model returned an incomplete wound diagnosis payload.");
+        err.statusCode = 502;
+        err.code = "AI_PREDICTION_ERROR";
+        throw err;
+      }
+
+      logger.info("Wound diagnosis received", {
+        route: "/v1/predict/wound",
+        is_snakebite,
+        confidence_score,
+      });
+
+      return {
+        is_snakebite: Boolean(is_snakebite),
+        confidence_score: Number(confidence_score),
+        description: String(description),
+      };
+    } catch (err) {
+      lastError = err;
+      logger.warn("Wound diagnosis attempt failed", {
+        route: "/v1/predict/wound",
+        attempt,
+        maxAttempts: config.AI_RETRY_ATTEMPTS,
+        reason: err.message,
+      });
+
+      if (attempt < config.AI_RETRY_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+      }
+    }
+  }
+
+  const wrapped = new Error(
+    `AI wound diagnosis service unavailable after ${config.AI_RETRY_ATTEMPTS} attempts: ${lastError.message}`
+  );
+  wrapped.statusCode = 502;
+  wrapped.code = "AI_PREDICTION_ERROR";
+  throw wrapped;
+}
+
+module.exports = { getPrediction, getWoundDiagnosis };

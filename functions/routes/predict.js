@@ -2,7 +2,7 @@
 
 const express = require("express");
 const { verifyToken } = require("../middleware/auth");
-const { getPrediction } = require("../services/predictionService");
+const { getPrediction, getWoundDiagnosis } = require("../services/predictionService");
 const { uploadImage } = require("../services/imageUpload");
 
 const router = express.Router();
@@ -83,16 +83,5 @@ router.post("/wound/upload", verifyToken, async (req, res, next) => {
     return next(err);
   }
 });
-
-// Helper function to diagnose wounds (placeholder for future model integration)
-async function getWoundDiagnosis(imageUrl) {
-  // @TODO: Integrate with wound detection model when available
-  // For now, return a placeholder response structure
-  return {
-    is_snakebite: false,
-    confidence_score: 0.5,
-    description: "Wound analysis feature coming soon. Please consult a medical professional.",
-  };
-}
 
 module.exports = router;
