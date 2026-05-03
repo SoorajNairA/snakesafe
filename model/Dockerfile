@@ -18,6 +18,7 @@ COPY --from=builder /deps /usr/local
 # Copy application code and model weights
 COPY server.py .
 COPY snake_venom_classifier.h5 .
+COPY wound_classifier.h5 .
 
 # Cloud Run injects PORT; default to 8080
 ENV PORT=8080

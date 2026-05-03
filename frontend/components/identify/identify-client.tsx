@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
 import { firebaseAuth } from "@/lib/firebase";
+import { getAnonId } from "@/lib/anon-id";
+import { TokenLimitModal } from "@/components/token-limit-modal";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -37,6 +39,7 @@ export function IdentifyClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [tokenLimitOpen, setTokenLimitOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,18 +68,31 @@ export function IdentifyClient() {
     setError("");
     try {
       const token = await firebaseAuth.currentUser?.getIdToken();
+      const anonId = getAnonId();
       const formData = new FormData();
       formData.append("snake_image", imageFile);
 
+      const headers: Record<string, string> = {
+        "X-Anon-Id": anonId,
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${API_URL}/predict/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         body: formData,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (data?.error === "TOKEN_LIMIT_EXCEEDED") {
+          setTokenLimitOpen(true);
+          return;
+        }
         throw new Error(data.message ?? "Prediction failed. Please try again.");
       }
 
@@ -107,6 +123,7 @@ export function IdentifyClient() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
+      <TokenLimitModal open={tokenLimitOpen} onClose={() => setTokenLimitOpen(false)} />
       {/* Header */}
       <FadeIn className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Snake Identification</h1>

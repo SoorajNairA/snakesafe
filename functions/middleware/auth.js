@@ -33,4 +33,33 @@ async function verifyToken(req, res, next) {
   }
 }
 
-module.exports = { verifyToken };
+/**
+ * optionalAuth — Express middleware
+ * If a Bearer token is present, it validates and attaches req.user.
+ * If no token is present, it continues without error.
+ */
+async function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+
+    const idToken = authHeader.split("Bearer ")[1].trim();
+    if (!idToken) {
+      return next();
+    }
+
+    const decodedToken = await auth.verifyIdToken(idToken);
+    req.user = decodedToken;
+    return next();
+  } catch (err) {
+    console.error("[Auth Middleware] Optional token verification failed:", err.message);
+    return res.status(401).json({
+      error: "UNAUTHORIZED",
+      message: "Invalid or expired authentication token.",
+    });
+  }
+}
+
+module.exports = { verifyToken, optionalAuth };

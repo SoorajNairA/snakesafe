@@ -10,12 +10,17 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "apphosting": [
-    {
-      "backendId": "snakesafe-frontend",
-      "rootDir": "frontend"
-    }
-  ],
+  "apphosting": {
+    "backendId": "snakesafe-frontend",
+    "rootDir": "frontend",
+    "alwaysDeployFromSource": true,
+    "ignore": [
+      "**/.*",
+      "**/.next/**",
+      "**/node_modules/**",
+      "firebase.json"
+    ]
+  },
   "emulators": {
     "auth": {
       "port": 9099

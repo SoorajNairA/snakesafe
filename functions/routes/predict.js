@@ -1,8 +1,12 @@
 "use strict";
 
 const express = require("express");
-const { verifyToken } = require("../middleware/auth");
-const { getPrediction } = require("../services/predictionService");
+const { verifyToken, optionalAuth } = require("../middleware/auth");
+const { enforceFreeTokens } = require("../middleware/tokenGate");
+const {
+  getPrediction,
+  getWoundDiagnosis: getWoundDiagnosisFromService,
+} = require("../services/predictionService");
 const { uploadImage } = require("../services/imageUpload");
 
 const router = express.Router();
@@ -10,7 +14,7 @@ const router = express.Router();
 // ── POST /predict ─────────────────────────────────────────────────────────────
 // Body: { image_url: string }
 // Returns: { species, venom_risk, confidence_score }
-router.post("/", verifyToken, async (req, res, next) => {
+router.post("/", optionalAuth, enforceFreeTokens, async (req, res, next) => {
   try {
     const { image_url } = req.body;
 
@@ -38,12 +42,13 @@ router.post("/", verifyToken, async (req, res, next) => {
 // and returns the result without creating a report document.
 // Content-Type: multipart/form-data
 // Returns: { species, venom_risk, confidence_score }
-router.post("/upload", verifyToken, async (req, res, next) => {
+router.post("/upload", optionalAuth, enforceFreeTokens, async (req, res, next) => {
   try {
+    const userId = req.user?.uid ?? req.anonId ?? "anonymous";
     const { signedUrl } = await uploadImage(
       req,
       "identify_images",
-      req.user.uid,
+      userId,
       "snake"
     );
 
@@ -64,16 +69,17 @@ router.post("/upload", verifyToken, async (req, res, next) => {
 // and returns the result without creating a report document.
 // Content-Type: multipart/form-data
 // Returns: { is_snakebite, confidence_score, description }
-router.post("/wound/upload", verifyToken, async (req, res, next) => {
+router.post("/wound/upload", optionalAuth, enforceFreeTokens, async (req, res, next) => {
   try {
+    const userId = req.user?.uid ?? req.anonId ?? "anonymous";
     const { signedUrl } = await uploadImage(
       req,
       "wound_images",
-      req.user.uid,
+      userId,
       "wound"
     );
 
-    const diagnosis = await getWoundDiagnosis(signedUrl);
+    const diagnosis = await getWoundDiagnosisFromService(signedUrl);
 
     return res.json({
       message: "Wound diagnosis completed.",
@@ -83,16 +89,5 @@ router.post("/wound/upload", verifyToken, async (req, res, next) => {
     return next(err);
   }
 });
-
-// Helper function to diagnose wounds (placeholder for future model integration)
-async function getWoundDiagnosis(imageUrl) {
-  // @TODO: Integrate with wound detection model when available
-  // For now, return a placeholder response structure
-  return {
-    is_snakebite: false,
-    confidence_score: 0.5,
-    description: "Wound analysis feature coming soon. Please consult a medical professional.",
-  };
-}
 
 module.exports = router;

@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
 import { firebaseAuth } from "@/lib/firebase";
+import { getAnonId } from "@/lib/anon-id";
+import { TokenLimitModal } from "@/components/token-limit-modal";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -37,6 +39,7 @@ export function DiagnoseClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<DiagnosisResult | null>(null);
+  const [tokenLimitOpen, setTokenLimitOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,18 +68,31 @@ export function DiagnoseClient() {
     setError("");
     try {
       const token = await firebaseAuth.currentUser?.getIdToken();
+      const anonId = getAnonId();
       const formData = new FormData();
       formData.append("wound_image", imageFile);
 
+      const headers: Record<string, string> = {
+        "X-Anon-Id": anonId,
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${API_URL}/predict/wound/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         body: formData,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (data?.error === "TOKEN_LIMIT_EXCEEDED") {
+          setTokenLimitOpen(true);
+          return;
+        }
         throw new Error(data.message ?? "Analysis failed. Please try again.");
       }
 
@@ -104,6 +120,7 @@ export function DiagnoseClient() {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-12">
+      <TokenLimitModal open={tokenLimitOpen} onClose={() => setTokenLimitOpen(false)} />
       <FadeIn>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Upload Section */}
@@ -328,7 +345,7 @@ export function DiagnoseClient() {
                     </p>
                     <p>
                       ✓{" "}
-                      <Link href="/report" className="underline hover:text-foreground">
+                      <Link href="/reports" className="underline hover:text-foreground">
                         Report this incident
                       </Link>{" "}
                       to help improve our database

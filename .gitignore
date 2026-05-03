@@ -67,3 +67,8 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Large model/data artifacts
+model/*.h5
+wound_model_output/
+wound_training_data/

@@ -1,0 +1,19 @@
+{
+  "model_type": "wound_classifier",
+  "framework": "tensorflow",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "output_shape": [
+    1
+  ],
+  "classes": {
+    "0": "not_snakebite",
+    "1": "snakebite"
+  },
+  "test_accuracy": 0.6610169410705566,
+  "test_auc": 0.568128228187561,
+  "threshold": 0.5
+}

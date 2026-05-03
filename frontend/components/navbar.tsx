@@ -21,6 +21,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
@@ -181,6 +182,7 @@ export function Navbar() {
 
         {/* Desktop right — auth */}
         <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle />
           {!loading && (
             user ? (
               /* Profile avatar + dropdown */
@@ -277,6 +279,10 @@ export function Navbar() {
                 transition={{ delay: 0.25, duration: 0.2 }}
                 className="mt-3 pt-3 border-t border-border"
               >
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-xs font-medium text-muted-foreground">Theme</span>
+                  <ThemeToggle />
+                </div>
                 {!loading && (
                   user ? (
                     <div className="space-y-1">

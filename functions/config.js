@@ -26,6 +26,7 @@ module.exports = {
   // ── AI Prediction ───────────────────────────────────────────────────────────
   AI_TIMEOUT_MS: parseInt(process.env.AI_TIMEOUT_MS || "15000"),
   AI_RETRY_ATTEMPTS: parseInt(process.env.AI_RETRY_ATTEMPTS || "2"),
+  FREE_SCAN_LIMIT: parseInt(process.env.FREE_SCAN_LIMIT || "3"),
 
   // ── Signed URLs ─────────────────────────────────────────────────────────────
   // Images are NOT made public. Signed URLs are generated on read (1 hour expiry).

@@ -94,4 +94,75 @@ async function getPrediction(imageUrl) {
   };
 }
 
-module.exports = { getPrediction };
+/**
+ * getWoundDiagnosis
+ * Calls the wound classifier endpoint on the AI model service.
+ *
+ * @param {string} imageUrl - Signed URL or public URL of the wound image
+ * @returns {Promise<{ is_snakebite: boolean, confidence_score: number, description: string }>}
+ */
+async function getWoundDiagnosis(imageUrl) {
+  const data = await aiBreaker.execute(async () => {
+    let lastError;
+
+    for (let attempt = 1; attempt <= config.AI_RETRY_ATTEMPTS; attempt++) {
+      try {
+        const response = await axios.post(
+          `${AI_MODEL_URL}/predict/wound`,
+          { image_url: imageUrl },
+          {
+            timeout: config.AI_TIMEOUT_MS,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        return response.data;
+      } catch (err) {
+        lastError = err;
+        logger.warn("AI wound prediction attempt failed", {
+          route: "/v1/predict/wound",
+          attempt,
+          maxAttempts: config.AI_RETRY_ATTEMPTS,
+          reason: err.message,
+        });
+
+        if (attempt < config.AI_RETRY_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 1000 * attempt));
+        }
+      }
+    }
+
+    const wrapped = new Error(
+      `AI wound prediction service unavailable after ${config.AI_RETRY_ATTEMPTS} attempts: ${lastError.message}`
+    );
+    wrapped.statusCode = 502;
+    wrapped.code = "AI_PREDICTION_ERROR";
+    throw wrapped;
+  });
+
+  const { is_snakebite, confidence_score, description } = data;
+
+  if (typeof is_snakebite !== "boolean" || confidence_score == null) {
+    const err = new Error("AI model returned an incomplete wound diagnosis payload.");
+    err.statusCode = 502;
+    err.code = "AI_PREDICTION_ERROR";
+    throw err;
+  }
+
+  logger.info("Wound diagnosis received", {
+    route: "/v1/predict/wound",
+    is_snakebite,
+    confidence_score,
+    circuitState: aiBreaker.state,
+  });
+
+  return {
+    is_snakebite: Boolean(is_snakebite),
+    confidence_score: Number(confidence_score),
+    description:
+      typeof description === "string"
+        ? description
+        : "Wound analysis completed.",
+  };
+}
+
+module.exports = { getPrediction, getWoundDiagnosis };
