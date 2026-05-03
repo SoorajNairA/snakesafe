@@ -40,6 +40,7 @@ export function IdentifyClient() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [tokenLimitOpen, setTokenLimitOpen] = useState(false);
+  const [tokenRemaining, setTokenRemaining] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +87,12 @@ export function IdentifyClient() {
         body: formData,
       });
 
+      const remainingHeader = res.headers.get("X-Token-Remaining");
+      if (remainingHeader) {
+        const remainingValue = Number.parseInt(remainingHeader, 10);
+        setTokenRemaining(Number.isNaN(remainingValue) ? null : remainingValue);
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -130,6 +137,11 @@ export function IdentifyClient() {
         <p className="text-muted-foreground mt-1 leading-relaxed">
           Upload or photograph a snake to get an instant venomous/non-venomous classification.
         </p>
+        {tokenRemaining !== null && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs text-muted-foreground">
+            Free scans left: <span className="text-foreground font-semibold">{tokenRemaining}</span>
+          </div>
+        )}
       </FadeIn>
 
       {/* Upload zone */}

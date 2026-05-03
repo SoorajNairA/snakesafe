@@ -40,6 +40,7 @@ export function DiagnoseClient() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [tokenLimitOpen, setTokenLimitOpen] = useState(false);
+  const [tokenRemaining, setTokenRemaining] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +87,12 @@ export function DiagnoseClient() {
         body: formData,
       });
 
+      const remainingHeader = res.headers.get("X-Token-Remaining");
+      if (remainingHeader) {
+        const remainingValue = Number.parseInt(remainingHeader, 10);
+        setTokenRemaining(Number.isNaN(remainingValue) ? null : remainingValue);
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -130,6 +137,11 @@ export function DiagnoseClient() {
               <p className="text-lg text-muted-foreground">
                 Upload a photo of the wound to determine if it might be a snakebite.
               </p>
+              {tokenRemaining !== null && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs text-muted-foreground">
+                  Free scans left: <span className="text-foreground font-semibold">{tokenRemaining}</span>
+                </div>
+              )}
             </div>
 
             {/* Upload Zone */}

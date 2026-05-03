@@ -218,6 +218,11 @@
   50% { transform: translateY(-6px); }
 }
 
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent, oklch(0.95 0 0 / 0.05), transparent);
@@ -225,3 +230,4 @@
   animation: shimmer 2s ease-in-out infinite;
 }
 .animate-float { animation: float 4s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
