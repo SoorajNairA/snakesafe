@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion";
+import { keralaAntivenomList, type AntivenomListEntry } from "@/lib/antivenom/kerala-list";
 
 type Hospital = {
   id: string;
@@ -22,9 +22,59 @@ type Hospital = {
   address: string;
   phone: string;
   antivenom: boolean;
+  antivenomVerified?: boolean;
+  antivenomExpected?: boolean;
+  antivenomSource?: string;
+  antivenomSourceUrl?: string;
   lat: number;
   lng: number;
 };
+
+const TN_POLICY_SOURCE_NAME = "NHM Tamil Nadu: antivenom in govt hospitals/PHCs";
+const TN_POLICY_SOURCE_URL = "http://nhm.tn.gov.in/en/node/6271";
+
+function normalizeHospitalName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(
+      /\b(hospital|medical|college|district|general|taluk|headquarters|thq|government|govt|community|primary|health|center|centre|specialty|speciality|child|children|institute|mission|memorial|clinic)\b/g,
+      ""
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchAntivenomList(name: string, list: AntivenomListEntry[]) {
+  const normalized = normalizeHospitalName(name);
+  if (!normalized) return null;
+
+  return (
+    list.find((entry) => {
+      const candidates = [entry.name, ...(entry.aliases ?? [])];
+      return candidates.some((candidate) => {
+        const candidateNormalized = normalizeHospitalName(candidate);
+        if (!candidateNormalized) return false;
+        return (
+          normalized.includes(candidateNormalized) ||
+          candidateNormalized.includes(normalized)
+        );
+      });
+    }) ?? null
+  );
+}
+
+function isTamilNaduHospital(name: string, address: string, tags: Record<string, string>) {
+  const state = (tags["addr:state"] ?? tags["is_in:state"] ?? "").toLowerCase();
+  return state.includes("tamil nadu") || state === "tn";
+}
+
+function isGovernmentOrPublicFacility(name: string, tags: Record<string, string>) {
+  const combined = `${name} ${tags["operator"] ?? ""} ${tags["ownership"] ?? ""}`.toLowerCase();
+  return /\b(govt|government|phc|chc|primary health center|primary health centre|community health center|community health centre|district hospital|taluk|thq|mch|medical college)\b/.test(
+    combined
+  );
+}
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371;
@@ -67,9 +117,25 @@ async function fetchNearbyHospitals(
 
       const distKm = haversineKm(userLat, userLng, lat, lng);
       const name = tags.name || tags["name:en"] || "Unnamed Hospital";
+      const verifiedEntry = matchAntivenomList(name, keralaAntivenomList);
       const parts = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"], tags["addr:state"]]
         .filter(Boolean)
         .join(", ");
+      const antivenomVerified = Boolean(verifiedEntry);
+      const antivenomExpected =
+        !antivenomVerified &&
+        isTamilNaduHospital(name, parts, tags) &&
+        isGovernmentOrPublicFacility(name, tags);
+      const antivenomSource = antivenomVerified
+        ? verifiedEntry?.sourceName
+        : antivenomExpected
+        ? TN_POLICY_SOURCE_NAME
+        : undefined;
+      const antivenomSourceUrl = antivenomVerified
+        ? verifiedEntry?.sourceUrl
+        : antivenomExpected
+        ? TN_POLICY_SOURCE_URL
+        : undefined;
 
       return {
         id: String(el.id ?? i),
@@ -77,7 +143,15 @@ async function fetchNearbyHospitals(
         distance: distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm.toFixed(1)} km`,
         address: parts || tags["addr:full"] || "Address not available",
         phone: tags.phone || tags["contact:phone"] || "",
-        antivenom: /emergency/i.test(tags.healthcare_speciality ?? "") || tags.emergency === "yes",
+        antivenom:
+          antivenomVerified ||
+          antivenomExpected ||
+          /emergency/i.test(tags.healthcare_speciality ?? "") ||
+          tags.emergency === "yes",
+        antivenomVerified,
+        antivenomExpected,
+        antivenomSource,
+        antivenomSourceUrl,
         lat,
         lng,
         _distKm: distKm,
@@ -171,6 +245,10 @@ export function HospitalsClient() {
         <p className="text-muted-foreground leading-relaxed">
           Locate nearby hospitals with antivenom treatment, sorted by distance.
         </p>
+        <div className="mt-4 rounded-lg border border-border/60 bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
+          <span className="text-foreground font-medium">Badge guide:</span>{" "}
+          Verified = matched a public antivenom list; Expected = TN government facility based on NHM policy; Reported = tagged in map data.
+        </div>
       </FadeIn>
 
       {/* Location controls */}
@@ -301,8 +379,22 @@ export function HospitalsClient() {
               {h.antivenom && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  Antivenom Available
+                  {h.antivenomVerified
+                    ? "Antivenom Verified"
+                    : h.antivenomExpected
+                    ? "Antivenom Expected"
+                    : "Antivenom Reported"}
                 </span>
+              )}
+              {h.antivenomSource && h.antivenomSourceUrl && (
+                <a
+                  href={h.antivenomSourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                >
+                  Source: {h.antivenomSource}
+                </a>
               )}
 
               {/* Actions */}
